@@ -388,6 +388,7 @@ def main():
                 - Manage stress levels
                 """)
 
+
     with tab2:
         st.markdown("### 💬 Diabetes Information Chat")
         st.caption("Ask me questions about diabetes symptoms, prevention, and management")
