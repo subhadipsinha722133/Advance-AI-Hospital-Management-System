@@ -5,6 +5,7 @@ import pandas as pd
 import pickle
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 
 # Database connection function
 def create_connection():
@@ -131,7 +132,7 @@ def init_session_state():
             # Load your trained model here
             # For demonstration, I'm creating a placeholder model
             # Replace this with your actual model loading code
-            st.session_state.diabetes_model = RandomForestClassifier()
+            st.session_state.diabetes_model = LogisticRegression()
             st.session_state.diabetes_model_loaded = True
         except:
             st.session_state.diabetes_model_loaded = False
@@ -218,6 +219,11 @@ def diabetes_chatbot():
             st.markdown(response)
         # Add assistant response to chat history
         st.session_state.chat_messages.append({"role": "assistant", "content": response})
+
+
+
+
+
 
 # Main function
 def main():
