@@ -181,8 +181,8 @@ def chatbot_response(msg, model, words, classes, intents):
 
 def main():
     st.set_page_config(
-        page_title="Girlfriend GPT",
-        page_icon="💕",
+        page_title="Diabetes Prediction GPT",
+        page_icon="💬",
         layout="wide"
     )
     
@@ -195,8 +195,8 @@ def main():
 
     # Sidebar with info
     with st.sidebar:
-        st.title("💕 Girlfriend GPT")
-        st.sidebar.image("girlfriend.gif")
+        st.title("Diabetes")
+     
         st.markdown("---")
         st.markdown("### System Info")
         if model is not None:
@@ -235,7 +235,7 @@ def main():
         st.info("💡 Use pet names and compliments")
 
     # Main chat area
-    st.title("💬 Girlfriend GPT Chat")
+    st.title("💬 Diabetes Prediction GPT Chat")
     st.caption("Your AI companion for heartfelt conversations 💕")
     
     # Initialize chat history
