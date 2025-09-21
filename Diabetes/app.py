@@ -35,57 +35,57 @@ st.set_page_config(
 )
 
 # Custom CSS
-st.markdown("""
-<style>
-    .main-header {
-        font-size: 3rem;
-        color: #2E86AB;
-        text-align: center;
-        margin-bottom: 2rem;
-    }
-    .prediction-box {
-        background-color: #f0f8ff;
-        padding: 2rem;
-        border-radius: 10px;
-        border-left: 5px solid #2E86AB;
-        margin: 2rem 0;
-    }
-    .high-risk {
-        color: #ff4b4b;
-        font-weight: bold;
-    }
-    .low-risk {
-        color: #00cc66;
-        font-weight: bold;
-    }
-    .chat-container {
-        background-color: #f9f9f9;
-        border-radius: 10px;
-        padding: 15px;
-        height: 500px;
-        overflow-y: auto;
-        margin-bottom: 20px;
-        border: 1px solid #ddd;
-    }
-    .user-message {
-        background-color: #dcf8c6;
-        padding: 10px;
-        border-radius: 10px;
-        margin: 5px 0;
-        text-align: right;
-        margin-left: 20%;
-    }
-    .bot-message {
-        background-color: #ffffff;
-        padding: 10px;
-        border-radius: 10px;
-        margin: 5px 0;
-        text-align: left;
-        margin-right: 20%;
-        border: 1px solid #eee;
-    }
-</style>
-""", unsafe_allow_html=True)
+# st.markdown("""
+# <style>
+#     .main-header {
+#         font-size: 3rem;
+#         color: #2E86AB;
+#         text-align: center;
+#         margin-bottom: 2rem;
+#     }
+#     .prediction-box {
+#         background-color: #f0f8ff;
+#         padding: 2rem;
+#         border-radius: 10px;
+#         border-left: 5px solid #2E86AB;
+#         margin: 2rem 0;
+#     }
+#     .high-risk {
+#         color: #ff4b4b;
+#         font-weight: bold;
+#     }
+#     .low-risk {
+#         color: #00cc66;
+#         font-weight: bold;
+#     }
+#     .chat-container {
+#         background-color: #f9f9f9;
+#         border-radius: 10px;
+#         padding: 15px;
+#         height: 500px;
+#         overflow-y: auto;
+#         margin-bottom: 20px;
+#         border: 1px solid #ddd;
+#     }
+#     .user-message {
+#         background-color: #dcf8c6;
+#         padding: 10px;
+#         border-radius: 10px;
+#         margin: 5px 0;
+#         text-align: right;
+#         margin-left: 20%;
+#     }
+#     .bot-message {
+#         background-color: #ffffff;
+#         padding: 10px;
+#         border-radius: 10px;
+#         margin: 5px 0;
+#         text-align: left;
+#         margin-right: 20%;
+#         border: 1px solid #eee;
+#     }
+# </style>
+# """, unsafe_allow_html=True)
 
 # Load and preprocess data function for diabetes prediction
 @st.cache_data
@@ -187,8 +187,6 @@ def load_chatbot_model():
     intents = DEFAULT_INTENTS
     
     try:
-        if os.path.exists(model_path):
-            model = load_model(model_path)
         if os.path.exists(words_path):
             with open(words_path, 'rb') as f:
                 words = pickle.load(f)
@@ -236,21 +234,26 @@ def bow(sentence, words, show_details=False):
                     print(f"found in bag: {w}")
     return np.array(bag)
 
-def predict_class(sentence, model, words, classes):
-    if model is None or words is None or classes is None:
+def predict_class(sentence, words, classes):
+    if words is None or classes is None:
         return []
         
     p = bow(sentence, words, show_details=False)
     if len(p) == 0:
         return []
-        
-    res = model.predict(np.array([p]))[0]
+    
+    # Use simple pattern matching instead of the neural network
     ERROR_THRESHOLD = 0.25
-    results = [[i, r] for i, r in enumerate(res) if r > ERROR_THRESHOLD]
-    results.sort(key=lambda x: x[1], reverse=True)
     return_list = []
-    for r in results:
-        return_list.append({"intent": classes[r[0]], "probability": float(r[1])})
+    
+    # Simple pattern matching implementation
+    sentence_lower = sentence.lower()
+    for i, intent in enumerate(DEFAULT_INTENTS['intents']):
+        for pattern in intent['patterns']:
+            if pattern.lower() in sentence_lower:
+                return_list.append({"intent": intent['tag'], "probability": 0.9})
+                break
+    
     return return_list
 
 def get_response(ints, intents_json):
@@ -272,8 +275,8 @@ def get_response(ints, intents_json):
             return random.choice(i['responses'])
     return "I'm still learning about diabetes. Could you ask something else?"
 
-def chatbot_response(msg, model, words, classes, intents):
-    ints = predict_class(msg, model, words, classes)
+def chatbot_response(msg, words, classes, intents):
+    ints = predict_class(msg, words, classes)
     return get_response(ints, intents)
 
 # Main app
@@ -388,13 +391,12 @@ def main():
                 - Manage stress levels
                 """)
 
-
     with tab2:
         st.markdown("### 💬 Diabetes Information Chat")
         st.caption("Ask me questions about diabetes symptoms, prevention, and management")
         
-        # Load chatbot model
-        chatbot_model, chatbot_words, chatbot_classes, chatbot_intents = load_chatbot_model()
+        # Load chatbot data (but not the problematic model)
+        _, chatbot_words, chatbot_classes, chatbot_intents = load_chatbot_model()
         
         # Initialize chat history
         if "chat_messages" not in st.session_state:
@@ -416,25 +418,9 @@ def main():
             # Add user message to chat history
             st.session_state.chat_messages.append({"role": "user", "content": prompt})
             
-            # Get bot response
+            # Get bot response using pattern matching instead of the neural network
             with st.spinner("Thinking..."):
-                if chatbot_model is not None:
-                    response = chatbot_response(prompt, chatbot_model, chatbot_words, chatbot_classes, chatbot_intents)
-                else:
-                    # Simple pattern matching for demo mode
-                    prompt_lower = prompt.lower()
-                    if any(word in prompt_lower for word in ["hi", "hello", "hey", "hola"]):
-                        response = "Hello! I can answer questions about diabetes. What would you like to know?"
-                    elif any(word in prompt_lower for word in ["what is diabetes", "tell me about diabetes"]):
-                        response = "Diabetes is a chronic condition that affects how your body processes blood sugar (glucose)."
-                    elif any(word in prompt_lower for word in ["symptoms", "signs"]):
-                        response = "Common symptoms include frequent urination, excessive thirst, unexplained weight loss, and fatigue."
-                    elif any(word in prompt_lower for word in ["prevent", "avoid", "reduce risk"]):
-                        response = "You can reduce diabetes risk by maintaining a healthy weight, eating balanced meals, and exercising regularly."
-                    elif any(word in prompt_lower for word in ["thank", "thanks", "appreciate"]):
-                        response = "You're welcome! Feel free to ask more questions about diabetes."
-                    else:
-                        response = "I'm specialized in diabetes information. Could you ask me something related to that?"
+                response = chatbot_response(prompt, chatbot_words, chatbot_classes, chatbot_intents)
             
             # Add assistant response to chat history
             st.session_state.chat_messages.append({"role": "assistant", "content": response})
@@ -445,10 +431,7 @@ def main():
         # Sidebar info for chatbot
         st.sidebar.markdown("---")
         st.sidebar.markdown("### Chat Information")
-        if chatbot_model is not None:
-            st.sidebar.success("🤖 AI Model: Loaded")
-        else:
-            st.sidebar.warning("🤖 AI Model: Using simple pattern matching")
+        st.sidebar.info("Using pattern matching for diabetes questions")
         
         st.sidebar.markdown("**Try asking:**")
         st.sidebar.markdown("- What is diabetes?")
