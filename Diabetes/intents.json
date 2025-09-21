@@ -1,0 +1,202 @@
+{
+  "intents": [
+    {
+      "tag": "greeting",
+      "patterns": ["Hi there", "How are you", "Is anyone there?", "Hey", "Hola", "Hello", "Good day", "Good morning", "Good afternoon"],
+      "responses": ["Hello! I'm here to help with diabetes information and risk assessment", "Hi there! Ready to learn about diabetes prevention?", "Hello! Let's talk about diabetes awareness and management"],
+      "context": [""]
+    },
+    {
+      "tag": "goodbye",
+      "patterns": ["Bye", "See you later", "Goodbye", "Nice chatting to you, bye", "Till next time", "Exit", "Quit"],
+      "responses": ["Stay healthy! Remember to monitor your sugar levels regularly", "Goodbye! Take care of your health - prevention is key", "See you! Regular check-ups are important for diabetes management"],
+      "context": [""]
+    },
+    {
+      "tag": "thanks",
+      "patterns": ["Thanks", "Thank you", "That's helpful", "Awesome, thanks", "Thanks for helping me", "Appreciate it"],
+      "responses": ["Happy to help with your diabetes questions!", "Any time! Your health is important", "My pleasure! Knowledge is power in diabetes management"],
+      "context": [""]
+    },
+    {
+      "tag": "noanswer",
+      "patterns": [],
+      "responses": ["Sorry, I didn't understand that. I can help with diabetes information and risk assessment", "Please ask about diabetes causes, prevention, or risk assessment", "Could you rephrase? I specialize in diabetes education and risk evaluation"],
+      "context": [""]
+    },
+    {
+      "tag": "options",
+      "patterns": ["What can you do?", "How can you help me?", "What services do you offer?", "Tell me about diabetes", "How does this work?"],
+      "responses": ["I provide diabetes education, risk assessment, prevention tips, management strategies, and information about causes and treatments", "I help with diabetes awareness, risk prediction using health metrics, and lifestyle guidance for prevention and management"],
+      "context": [""]
+    },
+    {
+      "tag": "what_is_diabetes",
+      "patterns": ["What is diabetes?", "Define diabetes", "Explain diabetes", "What does diabetes mean?", "Diabetes definition"],
+      "responses": ["Diabetes is a chronic health condition that affects how your body turns food into energy. There are three main types: Type 1, Type 2, and gestational diabetes. It occurs when your blood glucose (blood sugar) is too high."],
+      "context": [""]
+    },
+    {
+      "tag": "causes_diabetes",
+      "patterns": ["What causes diabetes?", "Why does diabetes occur?", "How do people get diabetes?", "Reasons for diabetes", "Diabetes causes"],
+      "responses": ["Type 1 diabetes: Autoimmune reaction where body attacks insulin-producing cells\nType 2 diabetes: Insulin resistance often due to lifestyle factors\nGestational diabetes: Hormonal changes during pregnancy\nRisk factors include genetics, obesity, sedentary lifestyle, poor diet, age, and ethnicity"],
+      "context": [""]
+    },
+    {
+      "tag": "type1_vs_type2",
+      "patterns": ["Difference between type 1 and type 2", "Type 1 vs type 2", "Compare diabetes types", "What's the difference between type 1 and 2?"],
+      "responses": ["Type 1: Autoimmune condition, usually develops in childhood, body produces little/no insulin\nType 2: Metabolic disorder, typically adult-onset, body becomes resistant to insulin\nType 1 requires insulin therapy, while Type 2 can often be managed with lifestyle changes and oral medications"],
+      "context": [""]
+    },
+    {
+      "tag": "prevention",
+      "patterns": ["How to prevent diabetes?", "Diabetes prevention", "Avoid diabetes", "Reduce diabetes risk", "Prevent type 2 diabetes"],
+      "responses": ["Maintain healthy weight, Exercise regularly (150 mins/week), Eat balanced diet (fiber-rich, low sugar), Limit processed foods, Avoid sugary drinks, Don't smoke, Regular health check-ups, Manage stress, Get quality sleep"],
+      "context": [""]
+    },
+    {
+      "tag": "symptoms",
+      "patterns": ["Diabetes symptoms", "Signs of diabetes", "How do I know if I have diabetes?", "What are diabetes symptoms?", "Early warning signs"],
+      "responses": ["Common symptoms: Frequent urination, Excessive thirst, Unexplained weight loss, Extreme hunger, Fatigue, Blurred vision, Slow-healing wounds, Tingling in hands/feet, Recurrent infections. Many people have no symptoms initially, especially with Type 2."],
+      "context": [""]
+    },
+    {
+      "tag": "diagnosis",
+      "patterns": ["How is diabetes diagnosed?", "Diabetes tests", "Diagnosing diabetes", "Blood sugar tests", "A1C test"],
+      "responses": ["Fasting blood sugar test (126 mg/dL or higher)\nA1C test (6.5% or higher)\nOral glucose tolerance test (200 mg/dL or higher)\nRandom blood sugar test (200 mg/dL or higher with symptoms)\nTesting should be confirmed with a second test unless symptoms are obvious."],
+      "context": [""]
+    },
+    {
+      "tag": "treatment",
+      "patterns": ["Diabetes treatment", "How to treat diabetes?", "Diabetes management", "Medications for diabetes", "Diabetes control"],
+      "responses": ["Type 1: Insulin therapy, blood sugar monitoring, carbohydrate counting\nType 2: Lifestyle changes, oral medications, sometimes insulin\nBoth types: Regular monitoring, healthy diet, physical activity, weight management, stress reduction\nNew treatments: Continuous glucose monitors, insulin pumps, GLP-1 receptor agonists"],
+      "context": [""]
+    },
+    {
+      "tag": "diet_recommendations",
+      "patterns": ["Diabetes diet", "What to eat with diabetes?", "Foods for diabetics", "Diabetes nutrition", "Meal planning for diabetes"],
+      "responses": ["Choose high-fiber foods (vegetables, fruits, whole grains)\nLean proteins (fish, poultry, legumes)\nHealthy fats (avocado, nuts, olive oil)\nLimit: refined carbs, sugary foods, processed foods\nPortion control, regular meal timing\nConsider working with a dietitian for personalized plans"],
+      "context": [""]
+    },
+    {
+      "tag": "complications",
+      "patterns": ["Diabetes complications", "Risks of diabetes", "Long-term effects", "What happens if diabetes is untreated?"],
+      "responses": ["Heart disease and stroke, Kidney damage (nephropathy), Nerve damage (neuropathy), Eye damage (retinopathy), Foot problems, Skin conditions, Hearing impairment, Alzheimer's disease, Depression\nGood blood sugar control significantly reduces complication risks."],
+      "context": [""]
+    },
+    {
+      "tag": "start_assessment",
+      "patterns": ["I want to check diabetes risk", "Start diabetes prediction", "Assess my diabetes risk", "Begin risk assessment", "Check for diabetes", "Predict diabetes"],
+      "responses": ["Let's start your diabetes risk assessment. Please provide your age:"],
+      "context": ["collect_age"]
+    },
+    {
+      "tag": "collect_age",
+      "patterns": [],
+      "responses": ["Thank you. Now please provide your BMI (Body Mass Index). If you don't know it, provide your height and weight:"],
+      "context": ["collect_bmi"]
+    },
+    {
+      "tag": "collect_bmi",
+      "patterns": [],
+      "responses": ["Great. What is your fasting glucose level (mg/dL)?"],
+      "context": ["collect_glucose"]
+    },
+    {
+      "tag": "collect_glucose",
+      "patterns": [],
+      "responses": ["Do you have a family history of diabetes? (yes/no)"],
+      "context": ["collect_family_history"]
+    },
+    {
+      "tag": "collect_family_history",
+      "patterns": [],
+      "responses": ["What is your blood pressure level? (e.g., 120/80)"],
+      "context": ["collect_blood_pressure"]
+    },
+    {
+      "tag": "collect_blood_pressure",
+      "patterns": [],
+      "responses": ["Do you exercise regularly? (yes/no)"],
+      "context": ["collect_exercise"]
+    },
+    {
+      "tag": "collect_exercise",
+      "patterns": [],
+      "responses": ["Calculating your diabetes risk... Based on your inputs, your risk level is: [result]. Would you like personalized prevention tips?"],
+      "context": ["provide_results"]
+    },
+    {
+      "tag": "reversal_possible",
+      "patterns": ["Can diabetes be reversed?", "Cure for diabetes", "Reverse type 2 diabetes", "Diabetes remission"],
+      "responses": ["Type 2 diabetes can often be put into remission through significant weight loss, dietary changes, and exercise. Some people can achieve normal blood sugar levels without medication. Type 1 diabetes cannot be reversed as it's an autoimmune condition, but it can be well-managed."],
+      "context": [""]
+    },
+    {
+      "tag": "emergency",
+      "patterns": ["High sugar emergency", "Diabetes emergency", "Urgent help", "Medical emergency", "Need doctor now", "Hypoglycemia", "Hyperglycemia"],
+      "responses": ["⚠️ If you're experiencing a medical emergency, please call emergency services immediately. For hyperglycemia (high blood sugar): watch for excessive thirst, frequent urination. For hypoglycemia (low blood sugar): consume fast-acting sugar. This chatbot is for informational purposes only."],
+      "context": [""]
+    },
+    {
+      "tag": "new_research",
+      "patterns": ["New diabetes treatments", "Latest diabetes research", "Diabetes breakthroughs", "Recent advances"],
+      "responses": ["Recent advances include: Artificial pancreas systems, Smart insulin that activates when needed, Stem cell research for beta cell regeneration, New medications with cardiovascular benefits, Improved continuous glucose monitors, Gene therapy research, Gut microbiome studies for metabolic health"],
+      "context": [""]
+    },
+    {
+      "tag": "mental_health",
+      "patterns": ["Diabetes and depression", "Mental health with diabetes", "Diabetes burnout", "Emotional aspects"],
+      "responses": ["Diabetes distress is common. Managing a chronic condition can lead to anxiety, depression, and burnout. Strategies include: Seeking support groups, Talking to a mental health professional, Practicing stress reduction techniques, Setting realistic goals, Celebrating small victories in management"],
+      "context": [""]
+    },
+    {
+      "tag": "results_high_risk",
+      "patterns": [],
+      "responses": ["Your assessment suggests high diabetes risk. Please consult a healthcare professional for proper screening. Consider: Weight management, Dietary changes, Regular exercise, Blood pressure control, Regular monitoring. Early intervention can prevent or delay onset."],
+      "context": [""]
+    },
+    {
+      "tag": "results_medium_risk",
+      "patterns": [],
+      "responses": ["You have moderate diabetes risk. Lifestyle modifications can significantly reduce your risk: Aim for 150 mins exercise weekly, Increase fiber intake, Reduce sugar and processed foods, Maintain healthy weight, Get annual check-ups."],
+      "context": [""]
+    },
+    {
+      "tag": "results_low_risk",
+      "patterns": [],
+      "responses": ["Your diabetes risk appears low. Maintain healthy habits: Balanced diet, Regular physical activity, Healthy weight, Limited alcohol, No smoking. Continue regular health screenings as risk increases with age."],
+      "context": [""]
+    },
+    {
+      "tag": "disclaimer",
+      "patterns": ["Is this accurate?", "Medical advice", "Doctor replacement", "Can I trust this prediction?"],
+      "responses": ["⚠️ Disclaimer: This is an educational tool, not a medical diagnosis. Always consult healthcare professionals for medical advice. Results are estimates based on provided information. This chatbot does not replace professional medical care."],
+      "context": [""]
+    },
+    {
+      "tag": "support_resources",
+      "patterns": ["Diabetes organizations", "Support groups", "Diabetes resources", "Where to find help"],
+      "responses": ["American Diabetes Association (ADA), JDRF (formerly Juvenile Diabetes Research Foundation), Diabetes UK, International Diabetes Federation, Local support groups, Certified Diabetes Educators, Endocrinologists, Registered dietitians specializing in diabetes care"],
+      "context": [""]
+    },
+    {
+      "tag": "technology",
+      "patterns": ["Diabetes technology", "CGMs", "Insulin pumps", "Apps for diabetes", "Digital health diabetes"],
+      "responses": ["Continuous Glucose Monitors (CGMs), Insulin pumps and pod systems, Smart insulin pens, Hybrid closed-loop systems (artificial pancreas), Mobile apps for tracking, Telemedicine for diabetes care, Data sharing platforms for healthcare providers"],
+      "context": [""]
+    },
+    {
+      "tag": "pregnancy",
+      "patterns": ["Gestational diabetes", "Diabetes and pregnancy", "Pregnancy with diabetes", "Blood sugar during pregnancy"],
+      "responses": ["Gestational diabetes develops during pregnancy and usually resolves after delivery. Management includes: Blood sugar monitoring, Medical nutrition therapy, Physical activity, Sometimes medication. Important to control for health of both mother and baby. Increases future Type 2 diabetes risk."],
+      "context": [""]
+    },
+    {
+      "tag": "children_diabetes",
+      "patterns": ["Diabetes in children", "Kids with diabetes", "Childhood diabetes", "Type 1 in children"],
+      "responses": ["Type 1 diabetes is more common in children, but Type 2 is increasing due to obesity rates. Signs in children: Increased thirst/hunger, Weight loss, Fatigue, Bedwetting, Mood changes. Management requires family involvement, education, and support for school management."],
+      "context": [""]
+    }
+  ]
+}
