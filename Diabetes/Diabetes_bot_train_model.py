@@ -15,7 +15,7 @@ from keras.optimizers import SGD
 lemmatizer = WordNetLemmatizer()
 
 # load intents
-with open('intents.json', 'r', encoding='utf-8') as f:
+with open('Diabetes\\intents.json', 'r', encoding='utf-8') as f:
     intents = json.load(f)
 
 words = []
