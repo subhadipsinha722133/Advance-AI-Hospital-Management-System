@@ -1022,7 +1022,7 @@ What would you like to learn about diabetes today?""",
             ]
             st.rerun()
 
-    # Enhanced app information
+    
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 📊 App Information")
     st.sidebar.info("""
@@ -1041,7 +1041,6 @@ What would you like to learn about diabetes today?""",
     Always consult healthcare professionals for diagnosis and treatment.
     """)
     
-    # Add usage tips
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 💡 Usage Tips")
     st.sidebar.markdown("""
