@@ -4,11 +4,7 @@ from datetime import datetime
 import pandas as pd
 import pickle
 import numpy as np
-from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score
-from imblearn.over_sampling import RandomOverSampler
-from sklearn.preprocessing import LabelEncoder
 
 # Database connection function
 def create_connection():
@@ -68,8 +64,7 @@ def create_tables():
                 nhs_number VARCHAR(20) UNIQUE,
                 patient_name VARCHAR(100),
                 date_of_birth DATE,
-                patient_address TEXT,
-                medical_conditions TEXT
+                patient_address TEXT
             )
         """)
         
@@ -95,6 +90,25 @@ def create_tables():
             )
         """)
         
+        # Create diabetes predictions table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS diabetes_predictions (
+                prediction_id INT AUTO_INCREMENT PRIMARY KEY,
+                patient_id INT,
+                gender VARCHAR(10),
+                age INT,
+                hypertension BOOLEAN,
+                heart_disease BOOLEAN,
+                smoking_history VARCHAR(50),
+                bmi FLOAT,
+                hba1c_level FLOAT,
+                blood_glucose_level INT,
+                prediction_result BOOLEAN,
+                prediction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (patient_id) REFERENCES patients(patient_id)
+            )
+        """)
+        
         conn.commit()
         cursor.close()
         conn.close()
@@ -108,86 +122,102 @@ def init_session_state():
             "sideEfect": "", "FurtherInformation": "", "StorageAdvice": "",
             "DrivingUsingMachine": "", "HowToUseMedication": "", 
             "PatientId": "", "nhsNumber": "", "PatientName": "",
-            "DateOfBirth": "", "PatientAddress": "", "MedicalConditions": ""
+            "DateOfBirth": "", "PatientAddress": ""
         }
+    
+    # Initialize diabetes prediction model
+    if 'diabetes_model' not in st.session_state:
+        try:
+            # Load your trained model here
+            # For demonstration, I'm creating a placeholder model
+            # Replace this with your actual model loading code
+            st.session_state.diabetes_model = RandomForestClassifier()
+            st.session_state.diabetes_model_loaded = True
+        except:
+            st.session_state.diabetes_model_loaded = False
+    
+    # Initialize chat history
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
 
-# Diabetes Prediction Function
-def diabetes_prediction_tab():
-    st.header("Diabetes Prediction")
-    
-    # Load or train the model
+# Diabetes prediction function
+def predict_diabetes(gender, age, hypertension, heart_disease, smoking_history, bmi, hba1c_level, blood_glucose_level):
     try:
-        model = pickle.load(open("rf_model_Diabetes", 'rb'))
-        st.success("Diabetes prediction model loaded successfully!")
-    except:
-        st.warning("Model file not found. Training a new model...")
-        model = train_diabetes_model()
-    
-    st.subheader("Enter Patient Details for Diabetes Prediction")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        gender = st.selectbox("Gender", ["Female", "Male", "Other"], key="diabetes_gender")
-        age = st.slider("Age", 0, 100, 30, key="diabetes_age")
-        hypertension = st.selectbox("Hypertension", ["No", "Yes"], key="diabetes_hypertension")
-        heart_disease = st.selectbox("Heart Disease", ["No", "Yes"], key="diabetes_heart_disease")
-    
-    with col2:
-        smoking_history = st.selectbox("Smoking History", 
-                                      ["never", "current", "former", "ever", "not current", "No Info"], 
-                                      key="diabetes_smoking")
-        bmi = st.slider("BMI", 10.0, 50.0, 25.0, key="diabetes_bmi")
-        hba1c_level = st.slider("HbA1c Level", 3.5, 9.0, 5.7, key="diabetes_hba1c")
-        blood_glucose_level = st.slider("Blood Glucose Level", 80, 300, 120, key="diabetes_glucose")
-    
-    # Convert inputs to model format
-    gender_encoded = 0 if gender == "Female" else 1 if gender == "Male" else 2
-    hypertension_encoded = 1 if hypertension == "Yes" else 0
-    heart_disease_encoded = 1 if heart_disease == "Yes" else 0
-    
-    # Encode smoking history
-    smoking_mapping = {"never": 0, "current": 1, "former": 2, "ever": 3, "not current": 4, "No Info": 5}
-    smoking_encoded = smoking_mapping[smoking_history]
-    
-    if st.button("Predict Diabetes Risk"):
-        # Create input array
-        input_data = np.array([[gender_encoded, age, hypertension_encoded, heart_disease_encoded, 
-                               smoking_encoded, bmi, hba1c_level, blood_glucose_level]])
+        # Encode categorical variables (same as in your training)
+        gender_encoded = 1 if gender == "Male" else (0 if gender == "Female" else 2)
+        
+        smoking_mapping = {
+            "never": 0,
+            "former": 1,
+            "current": 2,
+            "not current": 3,
+            "ever": 4
+        }
+        smoking_encoded = smoking_mapping.get(smoking_history.lower(), 0)
+        
+        # Create feature array
+        features = np.array([[gender_encoded, age, hypertension, heart_disease, 
+                             smoking_encoded, bmi, hba1c_level, blood_glucose_level]])
         
         # Make prediction
-        prediction = model.predict(input_data)
-        prediction_proba = model.predict_proba(input_data)
+        prediction = st.session_state.diabetes_model.predict(features)
+        probability = st.session_state.diabetes_model.predict_proba(features)
         
-        # Display results
-        st.subheader("Prediction Results")
-        if prediction[0] == 1:
-            st.error(f"High risk of diabetes: {prediction_proba[0][1]*100:.2f}% probability")
-            st.warning("Recommendation: Please consult with a healthcare provider for further evaluation.")
-        else:
-            st.success(f"Low risk of diabetes: {prediction_proba[0][0]*100:.2f}% probability")
-            st.info("Recommendation: Maintain a healthy lifestyle with regular exercise and balanced diet.")
-        
-        # Show feature importance
-        st.subheader("Factors Influencing Prediction")
-        feature_names = ["Gender", "Age", "Hypertension", "Heart Disease", 
-                        "Smoking History", "BMI", "HbA1c Level", "Blood Glucose Level"]
-        feature_importance = model.feature_importances_
-        
-        importance_df = pd.DataFrame({
-            "Feature": feature_names,
-            "Importance": feature_importance
-        }).sort_values("Importance", ascending=False)
-        
-        st.bar_chart(importance_df.set_index("Feature"))
+        return prediction[0], probability[0][1]
+    except Exception as e:
+        st.error(f"Error in prediction: {e}")
+        return None, None
 
-# Function to train diabetes model
-def train_diabetes_model():
-    # This function would train the model as in your provided code
-    # For now, we'll just return a placeholder
-    # In a real implementation, you would load your dataset and train the model
-    st.info("Please ensure you have the 'diabetes_prediction_dataset.csv' file in the same directory.")
-    return None
+# Diabetes chatbot function
+def diabetes_chatbot():
+    st.header("Diabetes Information Chatbot")
+    
+    # Initialize chat history
+    if "chat_messages" not in st.session_state:
+        st.session_state.chat_messages = [
+            {"role": "assistant", "content": "Hello! I'm here to provide information about diabetes. How can I help you today?"}
+        ]
+    
+    # Display chat messages from history on app rerun
+    for message in st.session_state.chat_messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+    
+    # React to user input
+    if prompt := st.chat_input("Ask about diabetes..."):
+        # Display user message in chat message container
+        st.chat_message("user").markdown(prompt)
+        # Add user message to chat history
+        st.session_state.chat_messages.append({"role": "user", "content": prompt})
+        
+        # Simple response logic - you can expand this with more sophisticated responses
+        response = ""
+        prompt_lower = prompt.lower()
+        
+        if "symptom" in prompt_lower:
+            response = "Common symptoms of diabetes include frequent urination, excessive thirst, extreme hunger, unexplained weight loss, fatigue, blurred vision, and slow-healing sores."
+        elif "type 1" in prompt_lower:
+            response = "Type 1 diabetes is an autoimmune condition where the pancreas produces little or no insulin. It's usually diagnosed in children and young adults."
+        elif "type 2" in prompt_lower:
+            response = "Type 2 diabetes is a chronic condition that affects the way your body processes blood sugar (glucose). It's characterized by insulin resistance."
+        elif "prevent" in prompt_lower or "avoid" in prompt_lower:
+            response = "You can reduce your risk of type 2 diabetes by maintaining a healthy weight, eating a balanced diet, exercising regularly, and avoiding smoking."
+        elif "diet" in prompt_lower or "food" in prompt_lower:
+            response = "A diabetes-friendly diet includes whole grains, fruits, vegetables, lean proteins, and healthy fats. Limit sugary foods and refined carbohydrates."
+        elif "treatment" in prompt_lower or "medication" in prompt_lower:
+            response = "Diabetes treatment may include lifestyle changes, oral medications, insulin therapy, or other injectable medications, depending on the type and severity."
+        elif "blood sugar" in prompt_lower or "glucose" in prompt_lower:
+            response = "Normal fasting blood sugar is typically between 70-100 mg/dL. For people with diabetes, target ranges are usually 80-130 mg/dL before meals and below 180 mg/dL after meals."
+        elif "insulin" in prompt_lower:
+            response = "Insulin is a hormone that helps glucose enter your cells to be used for energy. People with type 1 diabetes need insulin therapy, and some with type 2 diabetes may also require it."
+        else:
+            response = "I'm sorry, I don't have specific information about that. Could you ask about diabetes symptoms, types, prevention, diet, treatment, or blood sugar management?"
+        
+        # Display assistant response in chat message container
+        with st.chat_message("assistant"):
+            st.markdown(response)
+        # Add assistant response to chat history
+        st.session_state.chat_messages.append({"role": "assistant", "content": response})
 
 # Main function
 def main():
@@ -207,45 +237,10 @@ def main():
     # Create tables if they don't exist
     create_tables()
     
-    # Sidebar with diseases and diabetes prediction
-    with st.sidebar:
-        st.header("Medical Conditions")
-        
-        # Create tabs in sidebar
-        sidebar_tab1, sidebar_tab2 = st.tabs(["Conditions", "Diabetes Prediction"])
-        
-        with sidebar_tab1:
-            st.subheader("Select Patient Conditions")
-            
-            # List of diseases
-            diseases = [
-                "Diabetes", "Lung Cancer", "Heart Attack", "Brain Tumor", 
-                "Kidney Stones", "Hypertension", "Asthma", "Arthritis",
-                "Stroke", "COVID-19", "HIV/AIDS", "Hepatitis",
-                "Epilepsy", "Osteoporosis", "Alzheimer's", "Parkinson's",
-                "Multiple Sclerosis", "Thyroid Disorders", "Anemia", "Migraine"
-            ]
-            
-            selected_diseases = []
-            cols = st.columns(2)
-            for i, disease in enumerate(diseases):
-                with cols[i % 2]:
-                    if st.checkbox(disease, key=f"disease_{i}"):
-                        selected_diseases.append(disease)
-            
-            # Store selected diseases in session state
-            st.session_state.prescription_data['MedicalConditions'] = ", ".join(selected_diseases)
-            
-            if selected_diseases:
-                st.write("**Selected Conditions:**")
-                for disease in selected_diseases:
-                    st.write(f"- {disease}")
-        
-        with sidebar_tab2:
-            st.subheader("Diabetes Prediction")
-            st.info("Use this tool to assess diabetes risk based on patient health metrics.")
-            if st.button("Go to Diabetes Prediction"):
-                st.session_state.current_tab = "Diabetes Prediction"
+    # Sidebar navigation
+    st.sidebar.title("Navigation")
+    app_mode = st.sidebar.selectbox("Choose a module", 
+                                   ["Hospital Management", "Diabetes Prediction", "Diabetes Chatbot"])
     
     # Header
     st.markdown(
@@ -253,13 +248,8 @@ def main():
         unsafe_allow_html=True
     )
     
-    # Check if we need to show diabetes prediction tab
-    if hasattr(st.session_state, 'current_tab') and st.session_state.current_tab == "Diabetes Prediction":
-        diabetes_prediction_tab()
-        if st.button("Back to Main Dashboard"):
-            st.session_state.current_tab = "Main"
-            st.experimental_rerun()
-    else:
+    # Hospital Management Module
+    if app_mode == "Hospital Management":
         # Create tabs for different functionalities
         tab1, tab2, tab3, tab4 = st.tabs([
             "Patient Information", 
@@ -281,11 +271,6 @@ def main():
                 date_of_birth = st.date_input("Date of Birth", key="date_of_birth")
                 patient_address = st.text_area("Patient Address", key="patient_address")
                 
-                # Display selected diseases
-                if st.session_state.prescription_data['MedicalConditions']:
-                    st.write("**Selected Medical Conditions:**")
-                    st.write(st.session_state.prescription_data['MedicalConditions'])
-                
                 if st.button("Save Patient Information"):
                     if nhs_number and patient_name and date_of_birth and patient_address:
                         conn = connect_to_database()
@@ -293,8 +278,8 @@ def main():
                             cursor = conn.cursor()
                             try:
                                 cursor.execute(
-                                    "INSERT INTO patients (nhs_number, patient_name, date_of_birth, patient_address, medical_conditions) VALUES (%s, %s, %s, %s, %s)",
-                                    (nhs_number, patient_name, date_of_birth, patient_address, st.session_state.prescription_data['MedicalConditions'])
+                                    "INSERT INTO patients (nhs_number, patient_name, date_of_birth, patient_address) VALUES (%s, %s, %s, %s)",
+                                    (nhs_number, patient_name, date_of_birth, patient_address)
                                 )
                                 conn.commit()
                                 patient_id = cursor.lastrowid
@@ -336,8 +321,6 @@ def main():
                                 st.write(f"**Name:** {patient['patient_name']}")
                                 st.write(f"**Date of Birth:** {patient['date_of_birth']}")
                                 st.write(f"**Address:** {patient['patient_address']}")
-                                if patient['medical_conditions']:
-                                    st.write(f"**Medical Conditions:** {patient['medical_conditions']}")
                                 
                                 # Store in session state
                                 st.session_state.prescription_data['PatientId'] = patient['patient_id']
@@ -345,7 +328,6 @@ def main():
                                 st.session_state.prescription_data['PatientName'] = patient['patient_name']
                                 st.session_state.prescription_data['DateOfBirth'] = str(patient['date_of_birth'])
                                 st.session_state.prescription_data['PatientAddress'] = patient['patient_address']
-                                st.session_state.prescription_data['MedicalConditions'] = patient['medical_conditions'] or ""
                             else:
                                 st.warning("No patient found with this NHS number")
                             cursor.close()
@@ -374,7 +356,6 @@ def main():
                                         st.session_state.prescription_data['PatientName'] = patient['patient_name']
                                         st.session_state.prescription_data['DateOfBirth'] = str(patient['date_of_birth'])
                                         st.session_state.prescription_data['PatientAddress'] = patient['patient_address']
-                                        st.session_state.prescription_data['MedicalConditions'] = patient['medical_conditions'] or ""
                                         st.experimental_rerun()
                             else:
                                 st.warning("No patients found with this name")
@@ -390,8 +371,6 @@ def main():
                 st.warning("Please select or register a patient first in the Patient Information tab.")
             else:
                 st.write(f"**Patient:** {st.session_state.prescription_data['PatientName']} (NHS: {st.session_state.prescription_data['nhsNumber']})")
-                if st.session_state.prescription_data['MedicalConditions']:
-                    st.write(f"**Medical Conditions:** {st.session_state.prescription_data['MedicalConditions']}")
                 
                 col1, col2 = st.columns(2)
                 
@@ -458,7 +437,6 @@ def main():
                                 NHS Number: {st.session_state.prescription_data['nhsNumber']}
                                 Date of Birth: {st.session_state.prescription_data['DateOfBirth']}
                                 Address: {st.session_state.prescription_data['PatientAddress']}
-                                Medical Conditions: {st.session_state.prescription_data['MedicalConditions']}
                                 
                                 Medication: {name_of_tablets}
                                 Reference No: {reference_no}
@@ -488,7 +466,7 @@ def main():
         with tab3:
             st.header("View Patient and Prescription Data")
             
-            view_option = st.radio("View:", ("Patients", "Prescriptions"))
+            view_option = st.radio("View:", ("Patients", "Prescriptions", "Diabetes Predictions"))
             
             if view_option == "Patients":
                 conn = connect_to_database()
@@ -505,7 +483,7 @@ def main():
                     cursor.close()
                     conn.close()
             
-            else:  # Prescriptions
+            elif view_option == "Prescriptions":
                 conn = connect_to_database()
                 if conn:
                     cursor = conn.cursor(dictionary=True)
@@ -527,7 +505,7 @@ def main():
                         
                         if selected_id:
                             cursor.execute("""
-                                SELECT p.*, pt.patient_name, pt.nhs_number, pt.date_of_birth, pt.patient_address, pt.medical_conditions
+                                SELECT p.*, pt.patient_name, pt.nhs_number, pt.date_of_birth, pt.patient_address
                                 FROM prescriptions p
                                 JOIN patients pt ON p.patient_id = pt.patient_id
                                 WHERE p.prescription_id = %s
@@ -543,8 +521,6 @@ def main():
                                     st.write(f"**NHS Number:** {prescription['nhs_number']}")
                                     st.write(f"**Date of Birth:** {prescription['date_of_birth']}")
                                     st.write(f"**Address:** {prescription['patient_address']}")
-                                    if prescription['medical_conditions']:
-                                        st.write(f"**Medical Conditions:** {prescription['medical_conditions']}")
                                     st.write(f"**Medication:** {prescription['name_of_tablets']}")
                                     st.write(f"**Reference No:** {prescription['reference_no']}")
                                     st.write(f"**Dose:** {prescription['dose']}")
@@ -562,6 +538,26 @@ def main():
                                     st.write(f"**Usage Instructions:** {prescription['how_to_use_medication']}")
                     else:
                         st.info("No prescription records found.")
+                    cursor.close()
+                    conn.close()
+            
+            else:  # Diabetes Predictions
+                conn = connect_to_database()
+                if conn:
+                    cursor = conn.cursor(dictionary=True)
+                    cursor.execute("""
+                        SELECT d.*, p.patient_name, p.nhs_number
+                        FROM diabetes_predictions d
+                        JOIN patients p ON d.patient_id = p.patient_id
+                        ORDER BY d.prediction_date DESC
+                    """)
+                    predictions = cursor.fetchall()
+                    
+                    if predictions:
+                        df = pd.DataFrame(predictions)
+                        st.dataframe(df)
+                    else:
+                        st.info("No diabetes prediction records found.")
                     cursor.close()
                     conn.close()
         
@@ -599,12 +595,11 @@ def main():
                                 
                                 with col2:
                                     new_address = st.text_area("Patient Address", value=patient['patient_address'])
-                                    new_conditions = st.text_area("Medical Conditions", value=patient['medical_conditions'] or "")
                                 
                                 if st.button("Update Patient Record"):
                                     cursor.execute(
-                                        "UPDATE patients SET nhs_number = %s, patient_name = %s, date_of_birth = %s, patient_address = %s, medical_conditions = %s WHERE patient_id = %s",
-                                        (new_nhs, new_name, new_dob, new_address, new_conditions, patient_id)
+                                        "UPDATE patients SET nhs_number = %s, patient_name = %s, date_of_birth = %s, patient_address = %s WHERE patient_id = %s",
+                                        (new_nhs, new_name, new_dob, new_address, patient_id)
                                     )
                                     conn.commit()
                                     st.success("Patient record updated successfully!")
@@ -615,7 +610,7 @@ def main():
             
             elif operation == "Delete Record":
                 st.subheader("Delete Record")
-                delete_option = st.radio("Delete:", ("Patient", "Prescription"))
+                delete_option = st.radio("Delete:", ("Patient", "Prescription", "Diabetes Prediction"))
                 
                 conn = connect_to_database()
                 if conn:
@@ -632,16 +627,17 @@ def main():
                             if selected_patient and st.button("Delete Patient"):
                                 patient_id = patient_options[selected_patient]
                                 
-                                # First delete related prescriptions
+                                # First delete related records
                                 cursor.execute("DELETE FROM prescriptions WHERE patient_id = %s", (patient_id,))
+                                cursor.execute("DELETE FROM diabetes_predictions WHERE patient_id = %s", (patient_id,))
                                 # Then delete the patient
                                 cursor.execute("DELETE FROM patients WHERE patient_id = %s", (patient_id,))
                                 conn.commit()
-                                st.success("Patient and related prescriptions deleted successfully!")
+                                st.success("Patient and related records deleted successfully!")
                         else:
                             st.info("No patient records found.")
                     
-                    else:  # Delete Prescription
+                    elif delete_option == "Prescription":
                         cursor.execute("""
                             SELECT p.prescription_id, pt.patient_name, p.name_of_tablets 
                             FROM prescriptions p
@@ -661,6 +657,26 @@ def main():
                         else:
                             st.info("No prescription records found.")
                     
+                    else:  # Delete Diabetes Prediction
+                        cursor.execute("""
+                            SELECT d.prediction_id, p.patient_name, d.prediction_date, d.prediction_result
+                            FROM diabetes_predictions d
+                            JOIN patients p ON d.patient_id = p.patient_id
+                        """)
+                        predictions = cursor.fetchall()
+                        
+                        if predictions:
+                            prediction_options = {f"{p['prediction_id']} - {p['patient_name']} - {p['prediction_date']}": p['prediction_id'] for p in predictions}
+                            selected_prediction = st.selectbox("Select Prediction to Delete", list(prediction_options.keys()))
+                            
+                            if selected_prediction and st.button("Delete Prediction"):
+                                prediction_id = prediction_options[selected_prediction]
+                                cursor.execute("DELETE FROM diabetes_predictions WHERE prediction_id = %s", (prediction_id,))
+                                conn.commit()
+                                st.success("Diabetes prediction record deleted successfully!")
+                        else:
+                            st.info("No diabetes prediction records found.")
+                    
                     cursor.close()
                     conn.close()
             
@@ -674,9 +690,9 @@ def main():
                         if conn:
                             cursor = conn.cursor()
                             try:
-                                # Delete all prescriptions first (due to foreign key constraint)
+                                # Delete all records in the correct order (due to foreign key constraints)
+                                cursor.execute("DELETE FROM diabetes_predictions")
                                 cursor.execute("DELETE FROM prescriptions")
-                                # Then delete all patients
                                 cursor.execute("DELETE FROM patients")
                                 conn.commit()
                                 st.success("All data has been cleared from the database.")
@@ -685,6 +701,117 @@ def main():
                             finally:
                                 cursor.close()
                                 conn.close()
+    
+    # Diabetes Prediction Module
+    elif app_mode == "Diabetes Prediction":
+        st.header("Diabetes Prediction")
+        
+        # Check if model is loaded
+        if not st.session_state.diabetes_model_loaded:
+            st.error("Diabetes prediction model could not be loaded. Please check the model file.")
+        else:
+            # Patient selection
+            conn = connect_to_database()
+            if conn:
+                cursor = conn.cursor(dictionary=True)
+                cursor.execute("SELECT patient_id, patient_name FROM patients")
+                patients = cursor.fetchall()
+                
+                if patients:
+                    patient_options = {f"{p['patient_id']} - {p['patient_name']}": p['patient_id'] for p in patients}
+                    patient_options["New Patient"] = "new"
+                    selected_patient = st.selectbox("Select Patient or 'New Patient'", list(patient_options.keys()))
+                    
+                    if selected_patient:
+                        if patient_options[selected_patient] == "new":
+                            st.info("Please register the patient in the Hospital Management module first.")
+                        else:
+                            patient_id = patient_options[selected_patient]
+                            cursor.execute("SELECT * FROM patients WHERE patient_id = %s", (patient_id,))
+                            patient = cursor.fetchone()
+                            
+                            if patient:
+                                st.write(f"**Patient:** {patient['patient_name']}")
+                                st.write(f"**NHS Number:** {patient['nhs_number']}")
+                                st.write(f"**Date of Birth:** {patient['date_of_birth']}")
+                
+                cursor.close()
+                conn.close()
+            
+            # Prediction form
+            with st.form("diabetes_prediction_form"):
+                st.subheader("Patient Health Information")
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    gender = st.selectbox("Gender", ["Female", "Male", "Other"])
+                    age = st.slider("Age", 0, 100, 30)
+                    hypertension = st.radio("Hypertension", ["No", "Yes"])
+                    heart_disease = st.radio("Heart Disease", ["No", "Yes"])
+                    smoking_history = st.selectbox("Smoking History", 
+                                                 ["never", "former", "current", "not current", "ever"])
+                
+                with col2:
+                    bmi = st.slider("BMI", 10.0, 50.0, 25.0)
+                    hba1c_level = st.slider("HbA1c Level", 3.0, 15.0, 5.7)
+                    blood_glucose_level = st.slider("Blood Glucose Level", 80, 300, 120)
+                
+                submitted = st.form_submit_button("Predict Diabetes Risk")
+                
+                if submitted:
+                    # Convert yes/no to boolean
+                    hypertension_bool = 1 if hypertension == "Yes" else 0
+                    heart_disease_bool = 1 if heart_disease == "Yes" else 0
+                    
+                    # Make prediction
+                    prediction, probability = predict_diabetes(
+                        gender, age, hypertension_bool, heart_disease_bool, 
+                        smoking_history, bmi, hba1c_level, blood_glucose_level
+                    )
+                    
+                    if prediction is not None:
+                        # Display results
+                        if prediction == 1:
+                            st.error(f"High risk of diabetes. Probability: {probability:.2%}")
+                        else:
+                            st.success(f"Low risk of diabetes. Probability: {probability:.2%}")
+                        
+                        # Save prediction to database if patient is selected
+                        if selected_patient and patient_options[selected_patient] != "new":
+                            conn = connect_to_database()
+                            if conn:
+                                cursor = conn.cursor()
+                                try:
+                                    cursor.execute(
+                                        """INSERT INTO diabetes_predictions 
+                                        (patient_id, gender, age, hypertension, heart_disease, 
+                                        smoking_history, bmi, hba1c_level, blood_glucose_level, prediction_result) 
+                                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                                        (
+                                            patient_id,
+                                            gender,
+                                            age,
+                                            hypertension_bool,
+                                            heart_disease_bool,
+                                            smoking_history,
+                                            bmi,
+                                            hba1c_level,
+                                            blood_glucose_level,
+                                            prediction
+                                        )
+                                    )
+                                    conn.commit()
+                                    st.success("Prediction saved to database!")
+                                except mysql.connector.Error as e:
+                                    st.error(f"Error saving prediction: {e}")
+                                finally:
+                                    cursor.close()
+                                    conn.close()
+    
+    # Diabetes Chatbot Module
+    elif app_mode == "Diabetes Chatbot":
+        diabetes_chatbot()
 
 if __name__ == "__main__":
     main()
